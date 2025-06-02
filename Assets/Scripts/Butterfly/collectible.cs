@@ -1,6 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
+using System.Text;
+
 
 public class Collectible : MonoBehaviour
 {
@@ -18,6 +21,9 @@ public class Collectible : MonoBehaviour
 
     private SpriteRenderer spriteRenderer;
     private Vector3 lastPosition;
+
+    private string apiUrl = "https://symphony-unbound-api.vercel.app/api/add-butterfly";
+
 
     void Start()
     {
@@ -58,8 +64,7 @@ public class Collectible : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        // if (other.CompareTag("Player"))
-        if (other.CompareTag("Player")) // Salah tag → test gagal
+        if (other.CompareTag("Player"))
         {
             player = other.transform;
             isCollected = true;
@@ -79,6 +84,12 @@ public class Collectible : MonoBehaviour
             targetOffset = originalOffset;
 
             GetComponent<Collider2D>().enabled = false;
+
+            string userId = PlayerPrefs.GetString("userId", "");
+            if (!string.IsNullOrEmpty(userId))
+            {
+                StartCoroutine(AddButterflyRequest(userId));
+            }
         }
     }
 
@@ -115,13 +126,35 @@ public class Collectible : MonoBehaviour
         if (!isCollected) return; // Hanya flip jika sudah dikoleksi
 
         float movementDirection = transform.position.x - lastPosition.x;
-        
+
         // Pastikan perubahan posisi cukup signifikan sebelum melakukan flip
         if (Mathf.Abs(movementDirection) > 0.01f)
         {
             spriteRenderer.flipX = movementDirection < 0;
         }
-        
+
         lastPosition = transform.position;
+    }
+    
+    IEnumerator AddButterflyRequest(string userId)
+    {
+        string jsonData = "{\"userId\": \"" + userId + "\"}";
+        byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonData);
+
+        UnityWebRequest request = new UnityWebRequest(apiUrl, "PUT");
+        request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+        request.downloadHandler = new DownloadHandlerBuffer();
+        request.SetRequestHeader("Content-Type", "application/json");
+
+        yield return request.SendWebRequest();
+
+        if (request.result == UnityWebRequest.Result.Success)
+        {
+            Debug.Log("Butterfly count increased!");
+        }
+        else
+        {
+            Debug.LogError("Failed to add butterfly: " + request.error);
+        }
     }
 }

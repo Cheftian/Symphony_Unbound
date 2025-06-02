@@ -1,11 +1,15 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Networking;
+using System.Text;
+using System.Collections;
+
 
 public class EndingTrigger : MonoBehaviour
 {
-    [SerializeField] private string endingSceneName; // Nama scene ending yang bisa diatur dari Inspector
-    [SerializeField] private float waitTime = 3f; // Waktu yang harus dihabiskan di dalam trigger
-    [SerializeField] private GameObject popupObject; // GameObject yang akan muncul saat pemain masuk
+    [SerializeField] private string endingSceneName;
+    [SerializeField] private float waitTime = 3f;
+    [SerializeField] private GameObject popupObject;
 
     private float timeSpent = 0f;
     private bool isPlayerInside = false;
@@ -52,7 +56,14 @@ public class EndingTrigger : MonoBehaviour
             timeSpent += Time.deltaTime;
             if (timeSpent >= waitTime)
             {
-                SceneManager.LoadScene(endingSceneName);
+                int endingNumber = 0;
+
+                if (endingSceneName == "Ending1") endingNumber = 1;
+                else if (endingSceneName == "Ending2") endingNumber = 2;
+                else if (endingSceneName == "Ending3") endingNumber = 3;
+
+                StartCoroutine(AddEndingRequest(endingNumber));
+                enabled = false;
             }
         }
         else
@@ -60,4 +71,38 @@ public class EndingTrigger : MonoBehaviour
             timeSpent = 0f;
         }
     }
+
+
+    IEnumerator AddEndingRequest(int endingNumber)
+    {
+        string userId = PlayerPrefs.GetString("userId", "");
+        if (string.IsNullOrEmpty(userId))
+        {
+            Debug.LogWarning("User ID tidak ditemukan.");
+            yield break;
+        }
+
+        string jsonData = "{\"userId\": \"" + userId + "\", \"endingNumber\": " + endingNumber + "}";
+        byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonData);
+
+        UnityWebRequest request = new UnityWebRequest("https://symphony-unbound-api.vercel.app/api/add-ending", "PUT");
+        request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+        request.downloadHandler = new DownloadHandlerBuffer();
+        request.SetRequestHeader("Content-Type", "application/json");
+
+        yield return request.SendWebRequest();
+
+        if (request.result == UnityWebRequest.Result.Success)
+        {
+            Debug.Log("Ending berhasil disimpan!");
+        }
+        else
+        {
+            Debug.LogError("Gagal menyimpan ending: " + request.error);
+        }
+
+        // Setelah request selesai, pindah ke scene ending
+        SceneManager.LoadScene(endingSceneName);
+    }
+
 }

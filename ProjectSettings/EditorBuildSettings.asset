@@ -23,6 +23,12 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Ending3.unity
     guid: 201a53f385fe45b429672ee5406f90b0
+  - enabled: 1
+    path: Assets/Scenes/Register.unity
+    guid: f453364578ddb624d90ee9e96f885e37
+  - enabled: 1
+    path: Assets/Scenes/Login.unity
+    guid: 9e00173aaaa07854d8dd2d9026f2170b
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0
